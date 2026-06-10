@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Currency Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0A0A0F; --surface: #13131A; --surface2: #1C1C26;
+    --border: #2A2A38; --text: #F0EFF8; --text-muted: #6B6A80;
+    --accent: #7B6FFF; --accent-glow: rgba(123,111,255,0.15);
+    --green: #4ADE80; --green-glow: rgba(74,222,128,0.1);
+  }
+  body { font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem 1rem; position:relative; overflow-x:hidden; }
+  body::before { content:''; position:fixed; top:-200px; left:50%; transform:translateX(-50%); width:600px; height:600px; background:radial-gradient(circle,rgba(123,111,255,0.08) 0%,transparent 70%); pointer-events:none; }
+  .container { width:100%; max-width:480px; position:relative; z-index:1; }
+  header { text-align:center; margin-bottom:2.5rem; }
+  .eyebrow { font-family:'Space Mono',monospace; font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent); margin-bottom:0.75rem; }
+  h1 { font-size:2rem; font-weight:600; letter-spacing:-0.03em; line-height:1.1; }
+  h1 span { color:var(--accent); }
+  .subtitle { font-size:0.875rem; color:var(--text-muted); margin-top:0.5rem; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:1.75rem; margin-bottom:1rem; }
+  .field-label { font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.6rem; display:block; }
+  .field-row { display:grid; grid-template-columns:1fr 2fr; gap:0.75rem; margin-bottom:1.25rem; }
+  .field-row:last-child { margin-bottom:0; }
+  select, input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:0.5rem; padding:0.875rem 1rem; color:var(--text); font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:500; outline:none; transition:border-color 0.2s,box-shadow 0.2s; appearance:none; cursor:pointer; }
+  select:focus, input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+  input[type="number"] { font-family:'Space Mono',monospace; font-size:1.25rem; cursor:text; }
+  input[type="number"]::-webkit-inner-spin-button { display:none; }
+  .swap-btn { display:flex; align-items:center; justify-content:center; width:100%; padding:0.6rem; background:transparent; border:1px dashed var(--border); border-radius:0.5rem; color:var(--text-muted); cursor:pointer; margin:0.5rem 0; transition:border-color 0.2s,color 0.2s,background 0.2s; font-family:'Space Mono',monospace; font-size:0.75rem; letter-spacing:0.05em; }
+  .swap-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-glow); }
+  .convert-btn { width:100%; padding:1rem; background:var(--accent); border:none; border-radius:0.75rem; color:white; font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:opacity 0.2s,transform 0.15s; margin-top:0.25rem; }
+  .convert-btn:hover { opacity:0.9; transform:translateY(-1px); }
+  .convert-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .result-card { background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:1.75rem; margin-bottom:1rem; display:none; }
+  .result-card.visible { display:block; animation:fadeUp 0.4s ease both; }
+  .result-amount { font-family:'Space Mono',monospace; font-size:2.5rem; font-weight:700; color:var(--green); letter-spacing:-0.03em; line-height:1; margin-bottom:0.5rem; }
+  .result-detail { font-size:0.875rem; color:var(--text-muted); margin-bottom:0.25rem; }
+  .result-rate { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--text-muted); margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); }
+  .error-card { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:0.75rem; padding:1rem 1.25rem; font-size:0.875rem; color:#FCA5A5; margin-bottom:1rem; display:none; }
+  .error-card.visible { display:block; }
+  .loading { display:none; text-align:center; padding:1rem; color:var(--text-muted); font-size:0.875rem; font-family:'Space Mono',monospace; }
+  .loading.visible { display:block; }
+  .loading::after { content:''; display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin-left:0.5rem; vertical-align:middle; }
+  footer { text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:1rem; font-family:'Space Mono',monospace; }
+  footer a { color:var(--accent); text-decoration:none; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes spin { to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="eyebrow">// Currency Converter</div>
+    <h1>Convert <span>any</span><br>currency, live.</h1>
+    <p class="subtitle">Real-time exchange rates · 40+ currencies</p>
+  </header>
+  <div class="card">
+    <div class="field-row">
+      <div>
+        <label class="field-label">From</label>
+        <select id="fromCurrency"></select>
+      </div>
+      <div>
+        <label class="field-label">Amount</label>
+        <input type="number" id="amount" placeholder="1.00" value="1" min="0" step="any">
+      </div>
+    </div>
+    <button class="swap-btn" onclick="swapCurrencies()">⇅ swap currencies</button>
+    <div class="field-row" style="margin-top:0.75rem;">
+      <div>
+        <label class="field-label">To</label>
+        <select id="toCurrency"></select>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="convert-btn" onclick="convert()" id="convertBtn">Convert →</button>
+      </div>
+    </div>
+  </div>
+  <div class="loading" id="loading">Fetching live rates</div>
+  <div class="error-card" id="errorCard"></div>
+  <div class="result-card" id="resultCard">
+    <div class="result-detail" id="resultDetail"></div>
+    <div class="result-amount" id="resultAmount"></div>
+    <div class="result-rate" id="resultRate"></div>
+  </div>
+  <footer>Built by <a href="https://github.com/IsadoraEaston" target="_blank">Isabelle D. Easton</a></footer>
+</div>
+<script>
+  const CURRENCIES=[["USD","US Dollar"],["EUR","Euro"],["GBP","British Pound"],["CAD","Canadian Dollar"],["AUD","Australian Dollar"],["CHF","Swiss Franc"],["JPY","Japanese Yen"],["CNY","Chinese Yuan"],["INR","Indian Rupee"],["MXN","Mexican Peso"],["BRL","Brazilian Real"],["KRW","South Korean Won"],["SGD","Singapore Dollar"],["HKD","Hong Kong Dollar"],["NOK","Norwegian Krone"],["SEK","Swedish Krona"],["DKK","Danish Krone"],["NZD","New Zealand Dollar"],["ZAR","South African Rand"],["AED","UAE Dirham"],["SAR","Saudi Riyal"],["THB","Thai Baht"],["MYR","Malaysian Ringgit"],["IDR","Indonesian Rupiah"],["PHP","Philippine Peso"],["TRY","Turkish Lira"],["PLN","Polish Zloty"],["CZK","Czech Koruna"],["HUF","Hungarian Forint"],["ILS","Israeli Shekel"],["MAD","Moroccan Dirham"],["EGP","Egyptian Pound"],["NGN","Nigerian Naira"],["KES","Kenyan Shilling"],["CLP","Chilean Peso"],["COP","Colombian Peso"],["PEN","Peruvian Sol"],["ARS","Argentine Peso"],["VND","Vietnamese Dong"],["PKR","Pakistani Rupee"]];
+  let rates={};
+  function populateSelects(){
+    const from=document.getElementById('fromCurrency'),to=document.getElementById('toCurrency');
+    CURRENCIES.forEach(([code,name])=>{
+      from.add(new Option(`${code} — ${name}`,code));
+      to.add(new Option(`${code} — ${name}`,code));
+    });
+    from.value='CAD'; to.value='USD';
+  }
+  async function fetchRates(){
+    const res=await fetch('https://open.er-api.com/v6/latest/USD');
+    const data=await res.json();
+    if(data.result==='success') rates=data.rates;
+  }
+  async function convert(){
+    const amount=parseFloat(document.getElementById('amount').value);
+    const from=document.getElementById('fromCurrency').value;
+    const to=document.getElementById('toCurrency').value;
+    const btn=document.getElementById('convertBtn');
+    const loading=document.getElementById('loading');
+    const resultCard=document.getElementById('resultCard');
+    const errorCard=document.getElementById('errorCard');
+    resultCard.classList.remove('visible'); errorCard.classList.remove('visible');
+    if(!amount||amount<=0){errorCard.textContent='Please enter a valid amount greater than 0.';errorCard.classList.add('visible');return;}
+    btn.disabled=true; loading.classList.add('visible');
+    try{
+      if(Object.keys(rates).length===0) await fetchRates();
+      const inUSD=amount/rates[from], result=inUSD*rates[to], rate=rates[to]/rates[from];
+      document.getElementById('resultDetail').textContent=`${amount.toLocaleString()} ${from} =`;
+      document.getElementById('resultAmount').textContent=`${result.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4})} ${to}`;
+      document.getElementById('resultRate').textContent=`1 ${from} = ${rate.toFixed(6)} ${to}  ·  1 ${to} = ${(1/rate).toFixed(6)} ${from}`;
+      resultCard.classList.add('visible');
+    }catch(e){errorCard.textContent='Could not fetch exchange rates. Please try again.';errorCard.classList.add('visible');}
+    finally{btn.disabled=false;loading.classList.remove('visible');}
+  }
+  function swapCurrencies(){
+    const from=document.getElementById('fromCurrency'),to=document.getElementById('toCurrency');
+    [from.value,to.value]=[to.value,from.value];
+    document.getElementById('resultCard').classList.remove('visible');
+  }
+  document.getElementById('amount').addEventListener('keydown',e=>{if(e.key==='Enter')convert();});
+  populateSelects(); fetchRates();
+</script>
+</body>
+</html>
