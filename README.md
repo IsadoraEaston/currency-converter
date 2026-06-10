@@ -2,7 +2,7 @@
 
 A real-time currency converter built with vanilla HTML, CSS, and JavaScript. Convert between 40+ world currencies using live exchange rates.
 
-🌐 **Live demo:** [currency-converter-three-sigma-84.vercel.app]
+🌐 **Live demo:** [currency-converter-three-sigma-84.vercel.app](https://currency-converter-three-sigma-84.vercel.app)
 
 ## ✨ Features
 
